@@ -4,7 +4,6 @@ import com.flowingbit.data.collect.house_spider.dao.HouseDao;
 import com.flowingbit.data.collect.house_spider.model.House;
 import com.flowingbit.data.collect.house_spider.utils.IOUtil;
 import com.flowingbit.data.collect.house_spider.utils.StringUtil;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +17,8 @@ import us.codecraft.webmagic.selector.Selectable;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
 @Component
-public class HouseProcessor implements PageProcessor {
+public class HousePageProcessor implements PageProcessor {
 
     private String city;
 
@@ -32,9 +30,8 @@ public class HouseProcessor implements PageProcessor {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public HouseProcessor(){}
-
-    public HouseProcessor(String city, String region,String tableName){
+    public HousePageProcessor(){}
+    public HousePageProcessor(String city, String region, String tableName){
         this.city = city;
         this.region = region;
         this.count = 1;
@@ -46,7 +43,7 @@ public class HouseProcessor implements PageProcessor {
     // 部分一：抓取网站的相关配置，包括编码、抓取间隔、重试次数等
     private Site site = Site.me()
             .setRetryTimes(3)
-            .setSleepTime(500)
+            .setSleepTime(1000)
             .addHeader("Accept-Encoding", "gzip, deflate, br")
             .addHeader("Accept-Language", "zh-CN,zh;q=0.9")
             .addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3")
@@ -64,7 +61,7 @@ public class HouseProcessor implements PageProcessor {
                 page.setSkip(true);
             } else{
                 String htmlContent = page.getHtml().toString();
-                log.info("htmlContent:"+htmlContent);
+//                logger.info("htmlContent:"+htmlContent);
                 int total = Integer.valueOf(page.getHtml().xpath("//div[@class='resultDes clear']/h2/span/text()").toString().strip());
                 int totalPage = total/30 + 1;
                 System.out.println("==================总页数：" + totalPage + "  当前页：" + count + "===================");
@@ -117,7 +114,7 @@ public class HouseProcessor implements PageProcessor {
                                     }
                                 }
                             }catch (ArrayIndexOutOfBoundsException ae){
-
+                                logger.warn("ArrayIndexOutOfBoundsException",ae);
                             }
                             house.setId(StringUtil.collectStringNumber(url));
                             house.setTitle(title);
@@ -140,6 +137,8 @@ public class HouseProcessor implements PageProcessor {
                             //houseDao.insert(house);
                             houseList.add(house);
                             //将结果存到key：houses中
+
+
                         } catch (Exception ex) {
                             String jsonstr = e.xpath("//a[@class='noresultRecommend img LOGCLICKDATA']/@href").toString();
                             IOUtil.toFile(jsonstr, jsonstr + ".json");
@@ -147,11 +146,20 @@ public class HouseProcessor implements PageProcessor {
                             logger.error("Function process() >> targets.forEach() Exception,details:",ex);
                         }
                     });
-                    if(houseList==null||houseList.size()==0){
+                    if(houseList.size() == 0){
                         System.out.println("=============houseList.size()==0 ================");
                     }else{
                         try{
                             houseDao.batchInsert(houseList, tableName);
+                            houseList.forEach( house -> {
+                                //todo 解析房源详情
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        new HouseDetailProcessor().startProcessor(house.getUrl(),"shanghai_20200813");
+                                    }
+                                }).start();
+                            });
                         }catch (Exception ee){
                             houseList.forEach(g->{
                                 houseDao.insert(g, tableName);
@@ -167,8 +175,7 @@ public class HouseProcessor implements PageProcessor {
 
                     //page.putField("houses", houseList);
                     // 部分三：从页面发现后续的url地址来抓取
-                    int index = page.getUrl().toString().indexOf("pg");
-                    String newPage = page.getUrl().toString().substring(0, index) + "pg" + count + "/";
+                    String newPage = calcNewPageUrl(page,count);
                     page.addTargetRequest(newPage);
 
                 }else {
@@ -181,6 +188,31 @@ public class HouseProcessor implements PageProcessor {
         }
     }
 
+    /**
+     * 计算新页面url
+     * @param page
+     * @param count
+     * @return
+     */
+    private String calcNewPageUrl(Page page, int count) {
+        String url = page.getUrl().toString();
+        int index = url.indexOf("/pg");
+        String newPageUrl;
+        if (index < 0) {
+            StringBuffer sb = new StringBuffer(url);
+            String keyword = "ershoufang";
+            index = url.indexOf(keyword);
+            sb.insert(index + keyword.length() + 1, "pg" + count);
+            newPageUrl = sb.toString();
+        } else {
+//            ershoufang/pg2
+            String pageKwd = "pg" + count;
+            String pageKwdOld = "pg" + (count - 1);
+            newPageUrl = url.substring(0, index) + "/" + pageKwd + url.substring(index + 1 + pageKwdOld.length(), url.length());
+        }
+        return newPageUrl;
+    }
+
 
     @Override
     public Site getSite() {
@@ -188,7 +220,7 @@ public class HouseProcessor implements PageProcessor {
     }
 
     public void startProcessor(String url, String city, String region, String tableName){
-        Spider.create(new HouseProcessor(city, region, tableName))
+        Spider.create(new HousePageProcessor(city, region, tableName))
                 //从"https://github.com/code4craft"开始抓
                 .addUrl(url)
                 //开启1个线程抓取
@@ -200,10 +232,10 @@ public class HouseProcessor implements PageProcessor {
 
 
     public static void main(String[] args){
-        Spider.create(new HouseProcessor())
+        Spider.create(new HousePageProcessor("上海", "", "shanghai_20200813"))
                 //从"https://github.com/code4craft"开始抓
-                .addUrl("https://nj.lianjia.com/ershoufang/pg1")
-                //开启2个线程抓取
+                .addUrl("https://sh.lianjia.com/ershoufang/bt2y3y4y5f2f3f5lc2sf1l2l3a2a3p3/")
+                //开启1个线程抓取
                 .thread(1)
                 //启动爬虫
                 .run();

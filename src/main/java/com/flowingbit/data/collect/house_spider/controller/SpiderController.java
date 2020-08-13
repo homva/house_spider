@@ -1,7 +1,7 @@
 package com.flowingbit.data.collect.house_spider.controller;
 
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
-import com.flowingbit.data.collect.house_spider.service.processor.HouseProcessor;
+import com.flowingbit.data.collect.house_spider.service.processor.HousePageProcessor;
 import com.flowingbit.data.collect.house_spider.service.SpiderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +16,7 @@ public class SpiderController {
     SpiderService spiderService;
 
     @Autowired
-    HouseProcessor houseProcessor;
+    HousePageProcessor housePageProcessor;
 
     /**
      * 爬取指定城市的链家二手房,存到tableName的mysql表中

@@ -61,6 +61,19 @@ public class HouseDao {
         return false;
     }
 
+    public boolean update(String tableName){
+        String sql =  "CREATE TABLE " + tableName + CREATE_TABLE_SQL;
+        try(Statement stmt = conn.createStatement()){
+            if(0 == stmt.executeUpdate(sql)){
+                return true;
+            }
+        }catch (SQLException s){
+            System.out.println(s.getStackTrace());
+            return true;
+        }
+        return false;
+    }
+
     public int insert(House house, String tableName) {
         PreparedStatement ps = null;
         String sql = "INSERT IGNORE INTO `house`.`" + tableName + "`" + INSERT_SQL;
@@ -155,4 +168,39 @@ public class HouseDao {
 
     }
 
+    public int updateById(House house,String tableName) {
+        PreparedStatement ps = null;
+
+        String sql = "UPDATE `house`.`" + tableName + "`" + "set huan_xian=?,tihu_rate=?,chan_quan=?,shui_fei=?,jiao_tong=?,guapai_time=?,sell_msg=? where id = ?";
+        try {
+            ps = conn.prepareStatement(sql);
+            conn.setAutoCommit(true);
+            ps.setString(1, getVal(house.getHuanXian()));
+            ps.setString(2, getVal(house.getTihuRate()));
+            ps.setString(3, getVal(house.getChanQuan()));
+            ps.setString(4, getVal(house.getShuiFei()));
+            ps.setString(5, getVal(house.getJiaoTong()));
+            ps.setString(6, getVal(house.getGuaPaiTime()));
+            ps.setString(7, getVal(house.getSellMsg()));
+            ps.setString(8, getVal(house.getId()));
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            try {
+                if(ps!=null){
+                    ps.close();
+                }
+            } catch (SQLException e1) {
+                e1.printStackTrace();
+            }
+            e.printStackTrace();
+            return -1;
+        }
+    }
+    
+    public String getVal(String val){
+        if(val == null)
+            return "";
+        else
+            return val.strip();
+    }
 }

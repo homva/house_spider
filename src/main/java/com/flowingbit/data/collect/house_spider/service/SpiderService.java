@@ -6,7 +6,7 @@ import com.flowingbit.data.collect.house_spider.model.City;
 import com.flowingbit.data.collect.house_spider.model.Region;
 import com.flowingbit.data.collect.house_spider.model.Street;
 import com.flowingbit.data.collect.house_spider.service.processor.CityProcessor;
-import com.flowingbit.data.collect.house_spider.service.processor.HouseProcessor;
+import com.flowingbit.data.collect.house_spider.service.processor.HousePageProcessor;
 import com.flowingbit.data.collect.house_spider.service.processor.RegionProcessor;
 import com.flowingbit.data.collect.house_spider.service.processor.StreetProcessor;
 import org.slf4j.Logger;
@@ -76,8 +76,8 @@ public class SpiderService {
                 }else{
                     streetSet.stream().forEach(g->{
                         String streetUrl = str + g.getBriefName() + "/pg1";
-                        HouseProcessor houseProcessor = new HouseProcessor();
-                        houseProcessor.startProcessor(streetUrl, cityName, f.getName(), tableName);
+                        HousePageProcessor housePageProcessor = new HousePageProcessor();
+                        housePageProcessor.startProcessor(streetUrl, cityName, f.getName(), tableName);
                     });
                 }
             });
