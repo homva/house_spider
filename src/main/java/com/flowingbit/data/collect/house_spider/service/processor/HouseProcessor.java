@@ -4,6 +4,7 @@ import com.flowingbit.data.collect.house_spider.dao.HouseDao;
 import com.flowingbit.data.collect.house_spider.model.House;
 import com.flowingbit.data.collect.house_spider.utils.IOUtil;
 import com.flowingbit.data.collect.house_spider.utils.StringUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import us.codecraft.webmagic.selector.Selectable;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class HouseProcessor implements PageProcessor {
 
@@ -61,6 +63,8 @@ public class HouseProcessor implements PageProcessor {
             if (!page.getHtml().xpath("//ul[@class='sellListContent']").match()) {
                 page.setSkip(true);
             } else{
+                String htmlContent = page.getHtml().toString();
+                log.info("htmlContent:"+htmlContent);
                 int total = Integer.valueOf(page.getHtml().xpath("//div[@class='resultDes clear']/h2/span/text()").toString().strip());
                 int totalPage = total/30 + 1;
                 System.out.println("==================总页数：" + totalPage + "  当前页：" + count + "===================");
@@ -193,16 +197,16 @@ public class HouseProcessor implements PageProcessor {
                 .run();
     }
 
+
+
     public static void main(String[] args){
+        Spider.create(new HouseProcessor())
+                //从"https://github.com/code4craft"开始抓
+                .addUrl("https://nj.lianjia.com/ershoufang/pg1")
+                //开启2个线程抓取
+                .thread(1)
+                //启动爬虫
+                .run();
     }
-//    public static void main(String[] args){
-//        Spider.create(new HouseProcessor())
-//                //从"https://github.com/code4craft"开始抓
-//                .addUrl("https://nj.lianjia.com/ershoufang/pg1")
-//                //开启2个线程抓取
-//                .thread(2)
-//                //启动爬虫
-//                .run();
-//    }
 
 }
