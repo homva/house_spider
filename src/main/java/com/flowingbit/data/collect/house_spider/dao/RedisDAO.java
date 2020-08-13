@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.net.SocketTimeoutException;
@@ -19,7 +20,7 @@ public class RedisDAO {
 
     private JedisPool jedisPool;
 
-    private final static String REDIS_IP = "localhost";
+    private final static String REDIS_IP = "192.168.222.128";
 
     private final static int REDIS_PORT = 6379;
 
@@ -31,15 +32,17 @@ public class RedisDAO {
         jedisPool = new JedisPool(ip, port);
     }
 
+    private final String AUTH_CODE = "admin";
 
     public <T> boolean setSet(String key , Set<T> set){
         Jedis jedis = jedisPool.getResource();
+        jedis.auth(AUTH_CODE);
         try {
             byte[] listInfo = SerializeUtil.serialize(set);
             jedis.set(key.getBytes(), listInfo);
             return true;
         } catch (Exception e) {
-            logger.error("Set key error : "+e);
+            logger.error("Set key error : ",e);
         } finally {
             jedis.close();
         }
@@ -49,11 +52,12 @@ public class RedisDAO {
     public <T> Set<T> getSet(String key){
         Set<T> set = null;
         Jedis jedis = jedisPool.getResource();
+        jedis.auth(AUTH_CODE);
         try {
             byte[] in = jedis.get(key.getBytes());
             set = (Set<T>) SerializeUtil.unserialize(in);
         } catch (Exception e) {
-            logger.error("Set key error : "+e);
+            logger.error("Set key error : ",e);
         } finally {
             jedis.close();
         }
@@ -65,12 +69,13 @@ public class RedisDAO {
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
+            jedis.auth(AUTH_CODE);
             byte[] listInfo = SerializeUtil.serialize(list);
             result = jedis.set(key.getBytes(), listInfo);
         } catch (JedisConnectionException e1){
-            logger.error("JedisConnectionException, Please check redis server status!");
+            logger.error("JedisConnectionException, Please check redis server status!",e1);
         } catch (Exception e) {
-            logger.error("Set key error : "+e);
+            logger.error("Set key error : ",e);
         } finally {
             if(jedis!=null){
                 jedis.close();
@@ -82,13 +87,14 @@ public class RedisDAO {
     public <T> String setList(String key , List<T> list, int seconds){
         String result="setList_fail";
         Jedis jedis = jedisPool.getResource();
+        jedis.auth(AUTH_CODE);
         try {
             byte[] listInfo = SerializeUtil.serialize(list);
             result = jedis.set(key.getBytes(), listInfo);
             //设置键的过期时间为seconds秒
             jedis.expire(key,seconds);
         } catch (Exception e) {
-            logger.error("Set key error : "+e);
+            logger.error("Set key error : ",e);
         } finally {
             jedis.close();
         }
@@ -101,12 +107,13 @@ public class RedisDAO {
         Jedis jedis = null;
         try {
             jedis = jedisPool.getResource();
+            jedis.auth(AUTH_CODE);
             byte[] in = jedis.get(key.getBytes());
             list = (List<T>) SerializeUtil.unserialize(in);
         } catch (SocketTimeoutException e1){
             logger.error("SocketTimeoutException, please check redis server!");
         } catch (Exception e) {
-            logger.error("Set key error : "+e);
+            logger.error("Set key error : ",e);
         } finally {
             if(jedis!=null){
                 jedis.close();
@@ -118,10 +125,11 @@ public class RedisDAO {
     public String setString(String key , String value){
         String result=null;
         Jedis jedis = jedisPool.getResource();
+        jedis.auth(AUTH_CODE);
         try {
             result = jedis.set(key,value);
         } catch (Exception e) {
-            logger.error("RedisDAO setString error : "+e);
+            logger.error("RedisDAO setString error : ",e);
         } finally {
             jedis.close();
         }
@@ -131,10 +139,11 @@ public class RedisDAO {
     public String getString(String key){
         String result = null;
         Jedis jedis = jedisPool.getResource();
+        jedis.auth(AUTH_CODE);
         try {
             result = jedis.get(key);
         } catch (Exception e) {
-            logger.error("RedisDAO getString error : "+e);
+            logger.error("RedisDAO getString error : ",e);
         } finally {
             jedis.close();
         }
