@@ -175,7 +175,7 @@ public class HouseDao {
         String sql = "UPDATE `house`.`" + tableName + "`" + "set huan_xian=?,tihu_rate=?,chan_quan=?,shui_fei=?,jiao_tong=?,guapai_time=?,sell_msg=?,tags=? where id = ?";
         try {
             ps = conn.prepareStatement(sql);
-//            conn.setAutoCommit(true);
+            conn.setAutoCommit(true);
             ps.setString(1, getVal(house.getHuanXian()));
             ps.setString(2, getVal(house.getTihuRate()));
             ps.setString(3, getVal(house.getChanQuan()));
