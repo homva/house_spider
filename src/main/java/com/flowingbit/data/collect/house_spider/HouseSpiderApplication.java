@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableAsync
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.flowingbit.data.collect.house_spider",})
 public class HouseSpiderApplication {
 
     public static void main(String[] args) {

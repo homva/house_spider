@@ -4,14 +4,12 @@ import com.alibaba.fastjson.JSON;
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
 import com.flowingbit.data.collect.house_spider.message.MessageSender;
 import com.flowingbit.data.collect.house_spider.message.bean.MsgData;
-import com.flowingbit.data.collect.house_spider.model.Config;
 import com.flowingbit.data.collect.house_spider.model.House;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Html;
 
@@ -20,19 +18,19 @@ import us.codecraft.webmagic.selector.Html;
  */
 @Slf4j
 @Component
-@NoArgsConstructor
 public class HouseDetailProcessor implements PageProcessor {
 
     private String tableName;
     private House house;
 
-    private static HouseDao houseDao = new HouseDao();
+//    @Autowired
+    private HouseDao houseDao = new HouseDao();
 
-    public HouseDetailProcessor(String tableName){
+    public void setConfig(String tableName){
         this.tableName = tableName;
     }
 
-    public HouseDetailProcessor(String tableName,House house){
+    public void setConfig(String tableName,House house){
         this.tableName = tableName;
         this.house = house;
     }
@@ -133,24 +131,24 @@ public class HouseDetailProcessor implements PageProcessor {
         return site;
     }
 
-
-    public void startProcessor(String url, String tableName){
-        Spider.create(new HouseDetailProcessor(tableName))
-                //从"https://github.com/code4craft"开始抓
-                .addUrl(url)
-                //开启1个线程抓取
-                .thread(1)
-                //启动爬虫
-                .run();
-    }
-
-    public static void main(String[] args){
-        Spider.create(new HouseDetailProcessor(Config.TABLE_NAME))
-                .addUrl("https://sh.lianjia.com/ershoufang/107102624498.html")
-                //开启2个线程抓取
-                .thread(1)
-                //启动爬虫
-                .run();
-    }
+//
+//    public void startProcessor(String url, String tableName){
+//        Spider.create(new HouseDetailProcessor(tableName))
+//                //从"https://github.com/code4craft"开始抓
+//                .addUrl(url)
+//                //开启1个线程抓取
+//                .thread(1)
+//                //启动爬虫
+//                .run();
+//    }
+//
+//    public static void main(String[] args){
+//        Spider.create(new HouseDetailProcessor(Config.TABLE_NAME))
+//                .addUrl("https://sh.lianjia.com/ershoufang/107102624498.html")
+//                //开启2个线程抓取
+//                .thread(1)
+//                //启动爬虫
+//                .run();
+//    }
 
 }

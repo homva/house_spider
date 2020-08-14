@@ -7,7 +7,10 @@ import com.flowingbit.data.collect.house_spider.model.City;
 import com.flowingbit.data.collect.house_spider.model.House;
 import com.flowingbit.data.collect.house_spider.model.Region;
 import com.flowingbit.data.collect.house_spider.model.Street;
-import com.flowingbit.data.collect.house_spider.service.processor.*;
+import com.flowingbit.data.collect.house_spider.service.processor.CityProcessor;
+import com.flowingbit.data.collect.house_spider.service.processor.CommonProcessorStarter;
+import com.flowingbit.data.collect.house_spider.service.processor.RegionProcessor;
+import com.flowingbit.data.collect.house_spider.service.processor.StreetProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -84,8 +87,7 @@ public class SpiderService implements InitializingBean {
                 }else{
                     streetSet.stream().forEach(g->{
                         String streetUrl = str + g.getBriefName() + "/pg1";
-                        HousePageProcessor housePageProcessor = new HousePageProcessor();
-                        housePageProcessor.startProcessor(streetUrl, cityName, f.getName(), tableName);
+                        commonProcessorStarter.startHousePageList(streetUrl, cityName, f.getName(), tableName);
                     });
                 }
             });

@@ -1,7 +1,7 @@
 package com.flowingbit.data.collect.house_spider.service.processor;
 
+import com.alibaba.fastjson.JSON;
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
-import com.flowingbit.data.collect.house_spider.model.Config;
 import com.flowingbit.data.collect.house_spider.model.House;
 import com.flowingbit.data.collect.house_spider.service.SpiderService;
 import com.flowingbit.data.collect.house_spider.utils.IOUtil;
@@ -10,10 +10,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
-import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Selectable;
 
@@ -27,25 +27,25 @@ public class HousePageProcessor implements PageProcessor {
 
     private String region;
 
-    private int count;
+    private int count = 1;
 
     private String tableName;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Lazy
     @Autowired
     private SpiderService spiderService;
 
-    public HousePageProcessor(){}
-    public HousePageProcessor(String city, String region, String tableName){
+    public void setConfig(String city, String region, String tableName){
         this.city = city;
         this.region = region;
         this.count = 1;
         this.tableName = tableName;
     }
 
-    @Autowired
-    private HouseDao houseDao;
+//    @Autowired
+    private HouseDao houseDao = new HouseDao();
 
     // 部分一：抓取网站的相关配置，包括编码、抓取间隔、重试次数等
     private Site site = Site.me()
@@ -102,7 +102,7 @@ public class HousePageProcessor implements PageProcessor {
                             Selectable tagsSel = e.xpath("//div[@class='tag']/span");
                             if(tagsSel.match()){
                                 for (Selectable node : tagsSel.nodes()) {
-                                    tags += node.xpath("text()").toString();
+                                    tags += node.xpath("//span/text()").toString()+" ";
                                 }
                             }
                             String[] sl = followInfo.split("/");
@@ -170,10 +170,9 @@ public class HousePageProcessor implements PageProcessor {
                             // 解析房源详情
                             houseList.forEach( house -> spiderService.submitHouseDetailTask(house));
                         }catch (Exception ee){
-                            houseList.forEach(g->{
-                                houseDao.insert(g, tableName);
-                            });
-                            logger.error("Function process() >> targets.forEach() >> houseDao.batchInsert() Exception,details:",ee);
+                            logger.error("page batch insert error,houseList:{}", JSON.toJSONString(houseList),ee);
+                            return;
+//                            houseList.forEach(g-> houseDao.insert(g, tableName));
                             //将houseList存到文件
                             //String jsonstr = JSONArray.toJSONString(houseList);
                             //IOUtil.outFile(jsonstr, "houseList_" + city + region + ".json");
@@ -228,26 +227,26 @@ public class HousePageProcessor implements PageProcessor {
         return site;
     }
 
-    public void startProcessor(String url, String city, String region, String tableName){
-        Spider.create(new HousePageProcessor(city, region, tableName))
-                //从"https://github.com/code4craft"开始抓
-                .addUrl(url)
-                //开启1个线程抓取
-                .thread(1)
-                //启动爬虫
-                .run();
-    }
+//    public void startProcessor(String url, String city, String region, String tableName){
+//        Spider.create(new HousePageProcessor(city, region, tableName))
+//                //从"https://github.com/code4craft"开始抓
+//                .addUrl(url)
+//                //开启1个线程抓取
+//                .thread(1)
+//                //启动爬虫
+//                .run();
+//    }
 
 
 
-    public static void main(String[] args){
-        Spider.create(new HousePageProcessor("上海", "", Config.TABLE_NAME))
-                //从"https://github.com/code4craft"开始抓
-                .addUrl("https://sh.lianjia.com/ershoufang/bt2y3y4y5f2f3f5lc2sf1l2l3a2a3p3/")
-                //开启1个线程抓取
-                .thread(1)
-                //启动爬虫
-                .run();
-    }
+//    public static void main(String[] args){
+//        Spider.create(new HousePageProcessor("上海", "", Config.TABLE_NAME))
+//                //从"https://github.com/code4craft"开始抓
+//                .addUrl("https://sh.lianjia.com/ershoufang/bt2y3y4y5f2f3f5lc2sf1l2l3a2a3p3/")
+//                //开启1个线程抓取
+//                .thread(1)
+//                //启动爬虫
+//                .run();
+//    }
 
 }
