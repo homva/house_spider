@@ -1,8 +1,8 @@
 package com.flowingbit.data.collect.house_spider.controller;
 
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
-import com.flowingbit.data.collect.house_spider.service.processor.HousePageProcessor;
 import com.flowingbit.data.collect.house_spider.service.SpiderService;
+import com.flowingbit.data.collect.house_spider.service.processor.HousePageProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +27,11 @@ public class SpiderController {
         if(new HouseDao().createHouseTable(tableName)){
             spiderService.runCitySpider(cityName, tableName);
         }
+    }
+
+    @PostMapping(path = "/startHousePageTask")
+    public void startHousePageTask(@RequestBody String pageUrl){
+        spiderService.startHousePageListSpider(pageUrl);
     }
 
     /**

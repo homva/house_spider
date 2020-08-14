@@ -14,6 +14,7 @@ public class MsgData {
      * 链家url
      */
     private String lianjiaUrl;
+    private String community;
     /**
      * 总价
      */
@@ -26,10 +27,6 @@ public class MsgData {
      * 主图url
      */
     private String mainPic;
-    /**
-     * 描述
-     */
-    private String desc;
 
     /**
      * 板块

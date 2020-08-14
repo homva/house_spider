@@ -2,7 +2,11 @@ package com.flowingbit.data.collect.house_spider.service.processor;
 
 import com.alibaba.fastjson.JSON;
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
+import com.flowingbit.data.collect.house_spider.message.MessageSender;
+import com.flowingbit.data.collect.house_spider.message.bean.MsgData;
+import com.flowingbit.data.collect.house_spider.model.Config;
 import com.flowingbit.data.collect.house_spider.model.House;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
@@ -16,16 +20,21 @@ import us.codecraft.webmagic.selector.Html;
  */
 @Slf4j
 @Component
+@NoArgsConstructor
 public class HouseDetailProcessor implements PageProcessor {
 
     private String tableName;
+    private House house;
 
     private static HouseDao houseDao = new HouseDao();
 
-    public HouseDetailProcessor(){}
-
     public HouseDetailProcessor(String tableName){
         this.tableName = tableName;
+    }
+
+    public HouseDetailProcessor(String tableName,House house){
+        this.tableName = tableName;
+        this.house = house;
     }
 
     // 部分一：抓取网站的相关配置，包括编码、抓取间隔、重试次数等
@@ -43,9 +52,10 @@ public class HouseDetailProcessor implements PageProcessor {
     @Override
     public void process(Page page) {
         try {
-//            String html = page.getHtml().toString();
-//            log.info("html:{]",html);
             Html htmlDoc = page.getHtml();
+            String html = htmlDoc.toString();
+            log.info("html:{]",html);
+
 
             //环线位置
             String qu = htmlDoc.xpath("//div[@class='areaName']/span[2]/a[1]/text()").toString();
@@ -53,12 +63,7 @@ public class HouseDetailProcessor implements PageProcessor {
             String huan = htmlDoc.xpath("//div[@class='areaName']/span[2]/text()").toString();
             String huanLocation = qu+" "+jiedao+huan;
 
-            //链家编号
             String url = page.getUrl().toString();
-            int endIndex = url.indexOf(".html");
-            String kwd = "ershoufang/";
-            int startIndex = url.indexOf(kwd);
-            String id = url.substring(startIndex+kwd.length(),endIndex);
 
             //梯户比例
             String tihu = htmlDoc.xpath("//*[@id=\"introduction\"]/div/div/div[1]/div[2]/ul/li[10]/text()").toString();
@@ -73,8 +78,11 @@ public class HouseDetailProcessor implements PageProcessor {
             //核心卖点
             String sellMsg = htmlDoc.xpath("/html/body/div[7]/div[1]/div[2]/div/div[7]/div[2]/text()").toString();
 
-            House house = new House();
-            house.setId(id);
+            if(house == null){
+                house = new House();
+                //链家编号
+                house.setId(getHouseId(url));
+            }
             house.setHuanXian(huanLocation);
             house.setTihuRate(tihu);
             house.setChanQuan(chanQuan);
@@ -82,14 +90,41 @@ public class HouseDetailProcessor implements PageProcessor {
             house.setJiaoTong(jiaoTong);
             house.setGuaPaiTime(guaPaiTime);
             house.setSellMsg(sellMsg);
+            //判断是否笋盘好房源
+            boolean isGood = filterGoodHouse(htmlDoc,house);
+            if(isGood){
+                MsgData msg = new MsgData();
+                //todo 填充消息
+                MessageSender.sendLianJiaMsg(msg);
+            }
 
 //            System.out.println(JSON.toJSONString(house));
             houseDao.updateById(house,tableName);
             System.out.println("----------- 房源明细已更新：id："+house.getId()+"，url："+url+" ----------");
         } catch (Exception eee){
-            log.error("HouseDetailProcessor.process error",eee);
-            //EmailService.sendMail("769010256@qq.com", page.getUrl().toString(), "Function process() Exception,details:" + eee.getMessage());
+            log.error("HouseDetailProcessor.process error,house:{}", JSON.toJSONString(house),eee);
         }
+    }
+
+    private String getHouseId(String url) {
+        int endIndex = url.indexOf(".html");
+        String kwd = "ershoufang/";
+        int startIndex = url.indexOf(kwd);
+        return url.substring(startIndex+kwd.length(),endIndex);
+    }
+
+    /**
+     * 是否是笋盘
+     * @param htmlDoc
+     * @param house
+     * @return
+     */
+    private boolean filterGoodHouse(Html htmlDoc, House house) {
+        /**
+         * todo 条件
+         * 1. 总价
+         */
+        return false;
     }
 
 
@@ -110,7 +145,7 @@ public class HouseDetailProcessor implements PageProcessor {
     }
 
     public static void main(String[] args){
-        Spider.create(new HouseDetailProcessor("shanghai_20200813"))
+        Spider.create(new HouseDetailProcessor(Config.TABLE_NAME))
                 .addUrl("https://sh.lianjia.com/ershoufang/107102624498.html")
                 //开启2个线程抓取
                 .thread(1)

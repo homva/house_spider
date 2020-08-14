@@ -4,7 +4,6 @@ import cn.hutool.http.HttpException;
 import cn.hutool.http.HttpUtil;
 import com.flowingbit.data.collect.house_spider.message.bean.MsgData;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 
 /**
@@ -14,19 +13,18 @@ import org.springframework.stereotype.Service;
  *
  */
 @Slf4j
-@Service
 public class MessageSender {
 
-    private final String SECRET_KEY = "SCU26525T974542c312643fa831fb8ffa1eaf35675afbd62fc6ad8";
+    private final static String SECRET_KEY = "SCU26525T974542c312643fa831fb8ffa1eaf35675afbd62fc6ad8";
 
     /**
      * 发送Server酱消息（链家）
      * @param msg
      * @return
      */
-    public boolean sendLianJiaMsg(MsgData msg){
+    public static boolean sendLianJiaMsg(MsgData msg){
         String url = "https://sc.ftqq.com/"+SECRET_KEY+".send";
-        String title = "您有一条新房源可以瞄一眼！";
+        String title = String.format("新房源！！！%s_%s万",msg.getCommunity(),msg.getTotalPrice());
         /**
          * 模板如下：
          * ##### 房源信息（链家）

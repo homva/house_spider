@@ -3,14 +3,14 @@ package com.flowingbit.data.collect.house_spider.service;
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
 import com.flowingbit.data.collect.house_spider.dao.RedisDAO;
 import com.flowingbit.data.collect.house_spider.model.City;
+import com.flowingbit.data.collect.house_spider.model.House;
 import com.flowingbit.data.collect.house_spider.model.Region;
 import com.flowingbit.data.collect.house_spider.model.Street;
-import com.flowingbit.data.collect.house_spider.service.processor.CityProcessor;
-import com.flowingbit.data.collect.house_spider.service.processor.HousePageProcessor;
-import com.flowingbit.data.collect.house_spider.service.processor.RegionProcessor;
-import com.flowingbit.data.collect.house_spider.service.processor.StreetProcessor;
+import com.flowingbit.data.collect.house_spider.service.processor.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +19,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
-public class SpiderService {
+public class SpiderService implements InitializingBean {
 
     private RedisDAO redisDAO = new RedisDAO();
 
@@ -37,6 +39,9 @@ public class SpiderService {
         String tableName = cityName + "_" + date;
         return tableName;
     }
+
+    @Autowired
+    private CommonProcessorStarter commonProcessorStarter;
 
     /**
      * 爬取指定城市的二手房
@@ -152,5 +157,26 @@ public class SpiderService {
                 logger.info("不爬取该城市：" + name);
             }
         });
+    }
+
+    @Async
+    public void startHousePageListSpider(String url){
+        commonProcessorStarter.startHousePageList(url);
+    }
+
+
+    private BlockingQueue<House> queue = new LinkedBlockingQueue<>();
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        while (true){
+            House house = queue.take();
+            commonProcessorStarter.startHouseDetail(house.getUrl(),house);
+            Thread.sleep(200L);
+        }
+    }
+
+    public boolean submitHouseDetailTask(House house){
+        return queue.offer(house);
     }
 }

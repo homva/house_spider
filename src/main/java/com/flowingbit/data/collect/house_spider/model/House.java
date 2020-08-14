@@ -40,5 +40,6 @@ public class House implements Serializable {
     private String jiaoTong;    //交通
     private String guaPaiTime;  //挂牌时间，格式yyyy-MM-dd
     private String sellMsg;     //核心卖点
+    private String tags;        //特色标签
 
 }

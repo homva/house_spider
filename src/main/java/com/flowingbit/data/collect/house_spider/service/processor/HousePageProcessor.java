@@ -1,12 +1,15 @@
 package com.flowingbit.data.collect.house_spider.service.processor;
 
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
+import com.flowingbit.data.collect.house_spider.model.Config;
 import com.flowingbit.data.collect.house_spider.model.House;
+import com.flowingbit.data.collect.house_spider.service.SpiderService;
 import com.flowingbit.data.collect.house_spider.utils.IOUtil;
 import com.flowingbit.data.collect.house_spider.utils.StringUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
@@ -29,6 +32,9 @@ public class HousePageProcessor implements PageProcessor {
     private String tableName;
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    private SpiderService spiderService;
 
     public HousePageProcessor(){}
     public HousePageProcessor(String city, String region, String tableName){
@@ -90,6 +96,14 @@ public class HousePageProcessor implements PageProcessor {
                             String totolPrice = e.xpath("//div[@class='totalPrice']/span[1]/text()").toString();
                             String averagePrice = StringUtils.strip(StringUtils.strip(e.xpath("//div[@class='unitPrice']/span[1]/text()").toString(), "单价"), "元/平米");
                             String followInfo = e.xpath("//div[@class='followInfo']/text()").toString();
+
+                            String tags = "";
+                            Selectable tagsSel = e.xpath("//div[@class='tag']/span");
+                            if(tagsSel.match()){
+                                for (Selectable node : tagsSel.nodes()) {
+                                    tags += node.toString();
+                                }
+                            }
                             String[] sl = followInfo.split("/");
                             String watch = StringUtil.collectStringNumber(sl[0]);
                             //现在取消了带看次数
@@ -102,7 +116,7 @@ public class HousePageProcessor implements PageProcessor {
                             String towards = houseInfo[2].strip();
                             String decoration = null;
                             String floor = null;
-                            String houseAge = null;
+                            String houseAge;
                             house.setHouseAge(0);
                             try{
                                 decoration = houseInfo[3].strip();
@@ -133,6 +147,7 @@ public class HousePageProcessor implements PageProcessor {
                             house.setHouseArea(houseArea);
                             house.setTowards(towards);
                             house.setDecoration(decoration);
+                            house.setTags(tags);
                             //System.out.println(house.toString());
                             //houseDao.insert(house);
                             houseList.add(house);
@@ -151,15 +166,8 @@ public class HousePageProcessor implements PageProcessor {
                     }else{
                         try{
                             houseDao.batchInsert(houseList, tableName);
-                            houseList.forEach( house -> {
-                                //todo 解析房源详情
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        new HouseDetailProcessor().startProcessor(house.getUrl(),"shanghai_20200813");
-                                    }
-                                }).start();
-                            });
+                            // 解析房源详情
+                            houseList.forEach( house -> spiderService.submitHouseDetailTask(house));
                         }catch (Exception ee){
                             houseList.forEach(g->{
                                 houseDao.insert(g, tableName);
@@ -232,7 +240,7 @@ public class HousePageProcessor implements PageProcessor {
 
 
     public static void main(String[] args){
-        Spider.create(new HousePageProcessor("上海", "", "shanghai_20200813"))
+        Spider.create(new HousePageProcessor("上海", "", Config.TABLE_NAME))
                 //从"https://github.com/code4craft"开始抓
                 .addUrl("https://sh.lianjia.com/ershoufang/bt2y3y4y5f2f3f5lc2sf1l2l3a2a3p3/")
                 //开启1个线程抓取

@@ -34,7 +34,7 @@ public class HouseDao {
                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;";
 
     private static final String INSERT_SQL = "(`id`, `title`, `url` ,`city`,`region`, `street`,`community`, `floor`, `total_price`, `average_price`, `image`, `watch`, `release_date`, `room_count`, `towards`, `house_area`, `decoration`, `house_age`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
-    private static final String BATCH_INSERT_SQL = "(`id`, `title`, `url` ,`city`,`region`, `street`,`community`, `floor`, `total_price`, `average_price`, `image`, `watch`, `release_date`, `room_count`, `towards`, `house_area`, `decoration`, `house_age`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+    private static final String BATCH_INSERT_SQL = "(`id`, `title`, `url` ,`city`,`region`, `street`,`community`, `floor`, `total_price`, `average_price`, `image`, `watch`, `release_date`, `room_count`, `towards`, `house_area`, `decoration`, `house_age` ,`tags`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
     public HouseDao() {
         try {
             Class.forName(DRIVER);
@@ -143,6 +143,7 @@ public class HouseDao {
                 ps.setDouble(16, house.getHouseArea());
                 ps.setString(17, house.getDecoration());
                 ps.setInt(18, house.getHouseAge());
+                ps.setString(19, house.getTags());
                 //批量添加sql，并执行
                 ps.addBatch();
                 if(i==len-1){
@@ -171,7 +172,7 @@ public class HouseDao {
     public int updateById(House house,String tableName) {
         PreparedStatement ps = null;
 
-        String sql = "UPDATE `house`.`" + tableName + "`" + "set huan_xian=?,tihu_rate=?,chan_quan=?,shui_fei=?,jiao_tong=?,guapai_time=?,sell_msg=? where id = ?";
+        String sql = "UPDATE `house`.`" + tableName + "`" + "set huan_xian=?,tihu_rate=?,chan_quan=?,shui_fei=?,jiao_tong=?,guapai_time=?,sell_msg=?,tags=? where id = ?";
         try {
             ps = conn.prepareStatement(sql);
             conn.setAutoCommit(true);
@@ -182,7 +183,8 @@ public class HouseDao {
             ps.setString(5, getVal(house.getJiaoTong()));
             ps.setString(6, getVal(house.getGuaPaiTime()));
             ps.setString(7, getVal(house.getSellMsg()));
-            ps.setString(8, getVal(house.getId()));
+            ps.setString(8, getVal(house.getTags()));
+            ps.setString(9, getVal(house.getId()));
             return ps.executeUpdate();
         } catch (SQLException e) {
             try {
