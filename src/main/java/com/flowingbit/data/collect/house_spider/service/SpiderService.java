@@ -1,5 +1,6 @@
 package com.flowingbit.data.collect.house_spider.service;
 
+import com.flowingbit.data.collect.house_spider.async.ThreadPoolExecutorBuilder;
 import com.flowingbit.data.collect.house_spider.dao.HouseDao;
 import com.flowingbit.data.collect.house_spider.dao.RedisDAO;
 import com.flowingbit.data.collect.house_spider.model.City;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -25,7 +27,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Service
 public class SpiderService implements InitializingBean {
 
-    private RedisDAO redisDAO = new RedisDAO();
+    @Autowired
+    private RedisDAO redisDAO;
 
     private  Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -165,15 +168,24 @@ public class SpiderService implements InitializingBean {
     }
 
 
-    private BlockingQueue<House> queue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<House> queue = new LinkedBlockingQueue<>();
+
+    private ThreadPoolTaskExecutor taskExecutor = ThreadPoolExecutorBuilder.buildInitedThreadPoolTaskExecutor(1, 1, 0, 0, "thread_pagedetail_", null);
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        while (true){
-            House house = queue.take();
-            commonProcessorStarter.startHouseDetail(house.getUrl(),house);
-            Thread.sleep(200L);
-        }
+        taskExecutor.submit(()->{
+            while (true){
+                House house = queue.poll();
+                if(house == null){
+                    logger.info("queue is empty,wait for 15 seconds");
+                    Thread.sleep(15*1000L);
+                    continue;
+                }
+                commonProcessorStarter.startHouseDetail(house.getUrl(),house);
+                Thread.sleep(200L);
+            }
+        });
     }
 
     public boolean submitHouseDetailTask(House house){

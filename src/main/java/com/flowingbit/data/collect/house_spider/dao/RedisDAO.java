@@ -14,6 +14,7 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.Set;
 
+@Component
 public class RedisDAO {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

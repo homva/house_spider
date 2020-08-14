@@ -1,10 +1,12 @@
 package com.flowingbit.data.collect.house_spider.dao;
 
 import com.flowingbit.data.collect.house_spider.model.House;
+import org.springframework.stereotype.Component;
 
 import java.sql.*;
 import java.util.List;
 
+@Component
 public class HouseDao {
     private Connection conn = null;
     private Statement stmt = null;
